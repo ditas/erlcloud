@@ -132,11 +132,21 @@ retry(Attempt, _) ->
     {attempt, Attempt + 1}.
 
 -spec retry(#ddb2_error{}) -> attempt().
+-spec retry(#ddb2_error{}) -> attempt().
 retry(#ddb2_error{attempt = Attempt} = Error) when Attempt >= ?NUM_ATTEMPTS ->
+    
+    lager:notice("------DDB RETRY ERROR 1----~p~n", [Error]),
+    
     {error, Error#ddb2_error.reason};
 retry(#ddb2_error{should_retry = false} = Error) ->
+    
+    lager:notice("------DDB RETRY ERROR 2----~p~n", [Error]),
+    
     {error, Error#ddb2_error.reason};
-retry(#ddb2_error{attempt = Attempt}) ->
+retry(#ddb2_error{attempt = Attempt} = E) ->
+    
+    lager:notice("------DDB RETRY ERROR 3----~p~n", [E]),
+    
     backoff(Attempt),
     {attempt, Attempt + 1}.
 
@@ -251,6 +261,13 @@ client_error(Body, DDBError) ->
                             DDBError#ddb2_error{error_type = ddb,
                                                 should_retry = should_retry_canceled_transaction(CancellationReasons),
                                                 reason = {Type, {Message, CancellationReasons}}};
+    
+                        [_, Type] when
+                            Type =:= <<"InvalidSignatureException">> ->
+                            DDBError#ddb2_error{error_type = expired,
+                                should_retry = true,
+                                reason = {Type, Message}};
+                        
                         [_, Type] ->
                             DDBError#ddb2_error{error_type = ddb,
                                                 should_retry = false,
