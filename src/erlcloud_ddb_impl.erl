@@ -132,7 +132,6 @@ retry(Attempt, _) ->
     {attempt, Attempt + 1}.
 
 -spec retry(#ddb2_error{}) -> attempt().
--spec retry(#ddb2_error{}) -> attempt().
 retry(#ddb2_error{attempt = Attempt} = Error) when Attempt >= ?NUM_ATTEMPTS ->
     
     lager:notice("------DDB RETRY ERROR 1----~p~n", [Error]),
